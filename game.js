@@ -4,10 +4,12 @@ const ctx = canvas.getContext('2d');
 
 // Game variables
 const gravity = 0.5;
+const lives = 3;
+
 const platforms = [
-  { x: 0, y: canvas.height * (3 / 4), width: canvas.width, height: 10 },
-  { x: 0, y: canvas.height * (2 / 4), width: canvas.width, height: 10 },
-  { x: 0, y: canvas.height * (1 / 4), width: canvas.width, height: 10 },
+  { x: 0, y: canvas.height * (3 / 4), width: canvas.width * (3 / 4), height: 10 },
+  { x: canvas.width * (1 / 4), y: canvas.height * (2 / 4), width: canvas.width * (3 / 4), height: 10 },
+  { x: 0, y: canvas.height * (1 / 4), width: canvas.width * (3 / 4), height: 10 },
 ];
 
 const player = {
@@ -19,10 +21,11 @@ const player = {
   velocityY: 0,
   onGround: false,
   jumpHeight: -15,
+  lives: lives,
 };
 
 const obstacles = [
-  { x: canvas.width, y: platforms[0].y - 10, radius: 10, velocityX: -2 },
+  { x: canvas.width * (3 / 4), y: platforms[2].y - 10, radius: 10, velocityX: -2, velocityY: 2 },
 ];
 
 // Key events
@@ -61,6 +64,13 @@ function update() {
   player.x += player.velocityX;
   player.y += player.velocityY;
 
+  // Collision detection with walls
+  if (player.x <= 0) {
+    player.x = 0;
+  } else if (player.x + player.width >= canvas.width) {
+    player.x = canvas.width - player.width;
+  }
+
   // Collision detection with platforms
   player.onGround = false;
   for (let platform of platforms) {
@@ -79,10 +89,24 @@ function update() {
   // Obstacle movement
   for (let obstacle of obstacles) {
     obstacle.x += obstacle.velocityX;
+    obstacle.y += obstacle.velocityY;
+
+    // Bounce off platforms
+    for (let platform of platforms) {
+      if (
+        obstacle.y + obstacle.radius > platform.y &&
+        obstacle.y - obstacle.radius < platform.y + platform.height &&
+        obstacle.x + obstacle.radius > platform.x &&
+        obstacle.x - obstacle.radius < platform.x + platform.width
+      ) {
+        obstacle.velocityY = -obstacle.velocityY
+      }
+    }
 
     // Spawn new obstacles
     if (obstacle.x + obstacle.radius < 0) {
-      obstacle.x = canvas.width;
+      obstacle.x = canvas.width * (3 / 4);
+      obstacle.y = platforms[2].y - 10;
     }
   }
 
@@ -94,9 +118,17 @@ function update() {
       player.y + player.height > obstacle.y - obstacle.radius &&
       player.y < obstacle.y + obstacle.radius
     ) {
-      // Reset player position
+      // Decrease lives and reset player position
+      player.lives -= 1;
       player.x = 50;
       player.y = platforms[0].y - player.height;
+      
+      if (player.lives <= 0) {
+        // Game over, reset lives and player position
+        player.lives = lives;
+        player.x = 50;
+        player.y = platforms[0].y - player.height;
+      }
     }
   }
 }
@@ -122,6 +154,11 @@ function render() {
     ctx.arc(obstacle.x, obstacle.y, obstacle.radius, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  // Draw lives
+  ctx.fillStyle = 'white';
+  ctx.font = '20px Arial';
+  ctx.fillText('Lives: ' + player.lives, 10, 30);
 }
 
 // Start the game
