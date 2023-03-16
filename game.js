@@ -20,7 +20,7 @@ const player = {
   velocityX: 0,
   velocityY: 0,
   onGround: false,
-  jumpHeight: -12,
+  jumpHeight: -14,
   lives: lives,
 };
 
