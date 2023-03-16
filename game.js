@@ -25,7 +25,7 @@ const player = {
 };
 
 const obstacles = [
-  { x: canvas.width * (3 / 4), y: platforms[2].y - 10, radius: 10, velocityX: -2, velocityY: 2 },
+  { x: canvas.width * (3 / 4), y: platforms[2].y - 10, radius: 10, velocityX: -2, velocityY: 0 },
 ];
 
 // Key events
@@ -91,22 +91,30 @@ function update() {
     obstacle.x += obstacle.velocityX;
     obstacle.y += obstacle.velocityY;
 
-    // Bounce off platforms
-    for (let platform of platforms) {
+    // Reverse direction when hitting a wall
+    if (obstacle.x + obstacle.radius < 0 || obstacle.x - obstacle.radius > canvas.width) {
+      obstacle.velocityX = -obstacle.velocityX;
+    }
+
+    // Apply gravity to the obstacle
+    if (!onPlatform(obstacle)) {
+      obstacle.velocityY += gravity;
+    } else {
+      obstacle.velocityY = 0;
+    }
+
+    // Move to the lower platform
+    for (let i = 0; i < platforms.length; i++) {
+      let platform = platforms[i];
       if (
         obstacle.y + obstacle.radius > platform.y &&
         obstacle.y - obstacle.radius < platform.y + platform.height &&
         obstacle.x + obstacle.radius > platform.x &&
         obstacle.x - obstacle.radius < platform.x + platform.width
       ) {
-        obstacle.velocityY = -obstacle.velocityY
+        obstacle.y = platform.y - obstacle.radius;
+        break;
       }
-    }
-
-    // Spawn new obstacles
-    if (obstacle.x + obstacle.radius < 0) {
-      obstacle.x = canvas.width * (3 / 4);
-      obstacle.y = platforms[2].y - 10;
     }
   }
 
@@ -131,6 +139,20 @@ function update() {
       }
     }
   }
+}
+
+function onPlatform(obstacle) {
+  for (let platform of platforms) {
+    if (
+      obstacle.y + obstacle.radius > platform.y &&
+      obstacle.y - obstacle.radius < platform.y + platform.height &&
+      obstacle.x + obstacle.radius > platform.x &&
+      obstacle.x - obstacle.radius < platform.x + platform.width
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Render game
