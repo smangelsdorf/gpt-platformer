@@ -20,12 +20,12 @@ const player = {
   velocityX: 0,
   velocityY: 0,
   onGround: false,
-  jumpHeight: -15,
+  jumpHeight: -12,
   lives: lives,
 };
 
 const obstacles = [
-  { x: canvas.width * (3 / 4), y: platforms[2].y - 10, radius: 10, velocityX: -2, velocityY: 0 },
+  { x: platforms[2].x, y: platforms[2].y - 10, radius: 10, velocityX: 2, velocityY: 0 },
 ];
 
 // Key events
@@ -64,6 +64,13 @@ function update() {
   player.x += player.velocityX;
   player.y += player.velocityY;
 
+  // Check if player falls off the bottom of the game area
+  if (player.y + player.height > canvas.height) {
+    player.lives -= 1;
+    player.x = 50;
+    player.y = platforms[0].y - player.height;
+  }
+
   // Collision detection with walls
   if (player.x <= 0) {
     player.x = 0;
@@ -83,6 +90,14 @@ function update() {
       player.velocityY = 0;
       player.onGround = true;
       player.y = platform.y - player.height;
+    } else if (
+      player.x < platform.x + platform.width &&
+      player.x + player.width > platform.x &&
+      player.y < platform.y + platform.height &&
+      player.y > platform.y - player.height + player.velocityY
+    ) {
+      player.velocityY = 0;
+      player.y = platform.y + platform.height;
     }
   }
 
@@ -94,6 +109,12 @@ function update() {
     // Reverse direction when hitting a wall
     if (obstacle.x + obstacle.radius < 0 || obstacle.x - obstacle.radius > canvas.width) {
       obstacle.velocityX = -obstacle.velocityX;
+    }
+
+    // Despawn obstacle when leaving the bottom of the game area
+    if (obstacle.y - obstacle.radius > canvas.height) {
+      obstacles.splice(i, 1);
+      continue;
     }
 
     // Apply gravity to the obstacle
@@ -155,6 +176,10 @@ function onPlatform(obstacle) {
   return false;
 }
 
+function spawnObstacle() {
+  obstacles.push({ x: platforms[2].x, y: platforms[2].y - 10, radius: 10, velocityX: 2, velocityY: 0 });
+}
+
 // Render game
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -185,4 +210,4 @@ function render() {
 
 // Start the game
 gameLoop();
-
+setInterval(spawnObstacle, 10000);
